@@ -1,11 +1,11 @@
 Pod::Spec.new do |s|
     s.name             = 'GAM-DIO-Adapter'
-    s.version          = '4.0.2'
+    s.version          = '4.1.0'
     s.summary          = 'DIO Adapter for mediating through Google Ad Manger'
     s.homepage         = 'https://www.display.io/'
     s.license          = { :type => 'Apache-2.0', :file => 'LICENSE' }
     s.author           = { 'Roman Do' => 'romand@display.io' }
-    s.source           = { :git => "https://github.com/displayio/iOSMediationAdapters.git"}
+    s.source           = { :git => "https://github.com/displayio/iOSMediationAdapters.git", :tag => "#{s.version}"}
     s.ios.deployment_target = '10.0'
     s.static_framework = true
     s.subspec 'GAM' do |ms|
