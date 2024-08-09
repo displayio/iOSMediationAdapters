@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
     s.name             = 'IronSource-DIO-Adapter'
-    s.version          = '4.0.0'
+    s.version          = '4.1.7'
     s.summary          = 'DIO Adapter for mediating through IronSource'
     s.homepage         = 'https://www.display.io/'
     s.license          = { :type => 'Apache-2.0', :file => 'LICENSE' }
@@ -13,7 +13,7 @@ Pod::Spec.new do |s|
     end
     s.subspec 'Network' do |ns|
         ns.source_files = 'IronSource/*.{h,m}'
-        ns.dependency 'DIOSDK', '4.0.0'
+        ns.dependency 'DIOSDK'
         ns.dependency 'IronSourceSDK','7.9.1.0'
     end
 end

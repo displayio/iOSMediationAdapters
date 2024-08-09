@@ -143,10 +143,6 @@ static NSString *const PLACEMENT_ID = @"placementID";
         } errorHandler:^(NSError *error) {
             self.inlineDelegate = completionHandler(nil, error);
         }];
-        
-    } else if ([placement isKindOfClass: DIOHeadlinePlacement.class]){
-        NSError *error = [NSError errorWithDomain:@"Headline ad unit is not supported" code:GADErrorInternalError userInfo:nil];
-        self.inlineDelegate = completionHandler(nil, error);
     } else if ([placement isKindOfClass: DIOInFeedPlacement.class]
                || [placement isKindOfClass: DIOMediumRectanglePlacement.class]
                || [placement isKindOfClass: DIOBannerPlacement.class]){
