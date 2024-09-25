@@ -18,7 +18,7 @@ static NSString *const PLACEMENT_ID = @"placementID";
 
 @property(nonatomic, strong) id<GADMediationInterstitialAdEventDelegate> interstitialDelegate;
 @property(nonatomic, strong) id<GADMediationBannerAdEventDelegate> inlineDelegate;
-@property(nonatomic, strong) DIOAd *dioAd;
+@property(nonatomic, strong) DIOAd *dioInterstitialAd;
 @property(nonatomic, strong) UIView *adView;
 
 @end
@@ -107,63 +107,47 @@ static NSString *const PLACEMENT_ID = @"placementID";
     }
     [request setMediationPlatform:DIOMediationPlatformGAM];
     
-    if([placement isKindOfClass: DIOInterscrollerPlacement.class]) {
-        UIViewController *topViewController = adConfiguration.topViewController;
-        
-        if(topViewController == nil) {
-            NSError *error = [NSError errorWithDomain:DIO_CUSTOM_EVENT code:GADErrorInternalError userInfo:nil];
-            self.inlineDelegate = completionHandler(nil, error);
-            return;
-        }
-        
-        DIOInterscrollerPlacement *interscrollerPlacement = (DIOInterscrollerPlacement*)placement;
-        
-        if(params[@"isReveal"]){
-            BOOL isReveal = [[params valueForKey:@"isReveal"] boolValue];
-            interscrollerPlacement.reveal = isReveal;
-        }
-        if(params[@"showHeader"]){
-            BOOL showHeader = [[params valueForKey:@"showHeader"] boolValue];
-            interscrollerPlacement.showHeader = showHeader;
-        }
-        if(params[@"showTapHint"]){
-            BOOL showTapHint = [[params valueForKey:@"showTapHint"] boolValue];
-            interscrollerPlacement.showTapHint = showTapHint;
-        }
-        
-        DIOInterscrollerContainer *container = [[DIOInterscrollerContainer alloc] init];
-        [container loadWithAdRequest:request completionHandler:^(DIOAd *ad){
-            self.adView = [container view];
+    [request requestAdWithAdReceivedHandler:^(DIOAd *ad) {
+        self.adView = [ad view];
+        if ([placement isKindOfClass: DIOInterscrollerPlacement.class]){
+            UIViewController *topViewController = adConfiguration.topViewController;
+            
+            if(topViewController == nil) {
+                NSError *error = [NSError errorWithDomain:DIO_CUSTOM_EVENT code:GADErrorInternalError userInfo:nil];
+                self.inlineDelegate = completionHandler(nil, error);
+                return;
+            }
             self.adView.frame = CGRectMake(0, 0,
                                            topViewController.view.frame.size.width,
                                            topViewController.view.frame.size.height);
+            DIOInterscrollerPlacement *interscrollerPlacement = (DIOInterscrollerPlacement*)placement;
             
-            self.inlineDelegate = completionHandler(self, nil);
-            [self handleInlineAdEvents:ad];
-        } errorHandler:^(NSError *error) {
-            self.inlineDelegate = completionHandler(nil, error);
-        }];
-    } else if ([placement isKindOfClass: DIOInFeedPlacement.class]
-               || [placement isKindOfClass: DIOMediumRectanglePlacement.class]
-               || [placement isKindOfClass: DIOBannerPlacement.class]){
-        [request requestAdWithAdReceivedHandler:^(DIOAd *ad) {
-            self.adView = [ad view];
-            if ([placement isKindOfClass: DIOBannerPlacement.class]){
-                self.adView.frame = CGRectMake(0, 0, 320, 50);
+            if(params[@"isReveal"]){
+                BOOL isReveal = [[params valueForKey:@"isReveal"] boolValue];
+                interscrollerPlacement.reveal = isReveal;
             }
-            if ([placement isKindOfClass: DIOMediumRectanglePlacement.class]
-                || [placement isKindOfClass: DIOInFeedPlacement.class]){
-                self.adView.frame = CGRectMake(0, 0, 300, 250);
+            if(params[@"showHeader"]){
+                BOOL showHeader = [[params valueForKey:@"showHeader"] boolValue];
+                interscrollerPlacement.showHeader = showHeader;
             }
-            self.inlineDelegate = completionHandler(self, nil);
-            [self handleInlineAdEvents:ad];
-        } noAdHandler:^(NSError *error){
-            self.inlineDelegate = completionHandler(nil, error);
-        }];
-    } else {
-        NSError *error = [NSError errorWithDomain:DIO_CUSTOM_EVENT code:GADErrorInternalError userInfo:nil];
+            if(params[@"showTapHint"]){
+                BOOL showTapHint = [[params valueForKey:@"showTapHint"] boolValue];
+                interscrollerPlacement.showTapHint = showTapHint;
+            }
+        }
+        if ([placement isKindOfClass: DIOBannerPlacement.class]){
+            self.adView.frame = CGRectMake(0, 0, 320, 50);
+        }
+        if ([placement isKindOfClass: DIOMediumRectanglePlacement.class]
+            || [placement isKindOfClass: DIOInFeedPlacement.class]){
+            self.adView.frame = CGRectMake(0, 0, 300, 250);
+        }
+        self.inlineDelegate = completionHandler(self, nil);
+        [self handleInlineAdEvents:ad];
+    } noAdHandler:^(NSError *error){
         self.inlineDelegate = completionHandler(nil, error);
-    }
+    }];
+    
 }
 
 
@@ -171,7 +155,7 @@ static NSString *const PLACEMENT_ID = @"placementID";
 (GADMediationInterstitialAdConfiguration *)adConfiguration
                          completionHandler:
 (GADMediationInterstitialLoadCompletionHandler)completionHandler {
-    self.dioAd = nil;
+    self.dioInterstitialAd = nil;
     if (![DIOController sharedInstance].initialized) {
         NSError *error = [NSError errorWithDomain:DIO_CUSTOM_EVENT code:GADErrorInternalError userInfo:nil];
         completionHandler(nil, error);
@@ -218,7 +202,7 @@ static NSString *const PLACEMENT_ID = @"placementID";
     }
     [request setMediationPlatform:DIOMediationPlatformGAM];
     [request requestAdWithAdReceivedHandler:^(DIOAd *ad) {
-        self.dioAd = ad;
+        self.dioInterstitialAd = ad;
         self.interstitialDelegate = completionHandler(self, nil);
     } noAdHandler:^(NSError *error){
         completionHandler(nil, error);
@@ -233,10 +217,10 @@ static NSString *const PLACEMENT_ID = @"placementID";
 
 #pragma mark GADMediationInterstitialAd implementation
 - (void)presentFromViewController:(nonnull UIViewController *)viewController {
-    if(!self.dioAd) {
+    if(!self.dioInterstitialAd) {
         return;
     }
-    [self.dioAd showAdFromViewController:viewController eventHandler:^(DIOAdEvent event){
+    [self.dioInterstitialAd showAdFromViewController:viewController eventHandler:^(DIOAdEvent event){
         if(self.interstitialDelegate == nil) {
             return;
         }
@@ -275,10 +259,7 @@ static NSString *const PLACEMENT_ID = @"placementID";
     [ad setEventHandler:^(DIOAdEvent event) {
         switch (event) {
             case DIOAdEventOnShown:
-                [self.inlineDelegate willPresentFullScreenView];
                 [self.inlineDelegate reportImpression];
-                [self.inlineDelegate willDismissFullScreenView];
-                [self.inlineDelegate didDismissFullScreenView];
                 break;
             case DIOAdEventOnFailedToShow:{
                 NSError *error = [NSError errorWithDomain:DIO_CUSTOM_EVENT code:GADErrorInternalError userInfo:nil];
