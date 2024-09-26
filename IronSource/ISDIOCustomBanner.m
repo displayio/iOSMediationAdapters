@@ -35,37 +35,21 @@ DIOAd *dioInlineAd;
     dispatch_async(dispatch_get_main_queue(), ^{
         DIOAdRequest *adRequest = [placement newAdRequest];
         
-        if([placement isKindOfClass: DIOInterscrollerPlacement.class]) {
-            DIOInterscrollerContainer *container = [[DIOInterscrollerContainer alloc] init];
-            [container loadWithAdRequest:adRequest completionHandler:^(DIOAd *ad){
-                dioInlineAd = ad;
-                [self handleInlineAdEvents:ad andNotifyDelegate:delegate];
-                UIView *adView = [container view];
-                [delegate adDidLoadWithView: adView];
-            } errorHandler:^(NSError *error) {
-                [delegate adDidFailToLoadWithErrorType:ISAdapterErrorTypeNoFill errorCode:ISAdapterErrorInternal errorMessage:@"No fill"];
-                
-            }];
-        } else if ([placement isKindOfClass: DIOInFeedPlacement.class]
-                   || [placement isKindOfClass: DIOMediumRectanglePlacement.class]
-                   || [placement isKindOfClass: DIOBannerPlacement.class]){
-            [adRequest requestAdWithAdReceivedHandler:^(DIOAd *ad) {
-                dioInlineAd = ad;
-                [self handleInlineAdEvents:ad andNotifyDelegate:delegate];
-                UIView *adView = [ad view];
-                if ([placement isKindOfClass: DIOMediumRectanglePlacement.class]
-                     || [placement isKindOfClass: DIOInFeedPlacement.class]){
-                    adView.frame = CGRectMake(0, 0, 300, 250);
-                    [adView.widthAnchor constraintEqualToConstant:300].active = YES;
-                    [adView.heightAnchor constraintEqualToConstant:250].active = YES;
-                }
-                [delegate adDidLoadWithView: adView];
-            } noAdHandler:^(NSError *error){
-                [delegate adDidFailToLoadWithErrorType:ISAdapterErrorTypeNoFill errorCode:ISAdapterErrorInternal errorMessage:@"No fill"];
-            }];
-        } else {
-            [delegate adDidFailToLoadWithErrorType:ISAdapterErrorTypeInternal errorCode:ISAdapterErrorInternal errorMessage:@"Unsupported placement type"];
-        }
+        [adRequest requestAdWithAdReceivedHandler:^(DIOAd *ad) {
+            dioInlineAd = ad;
+            [self handleInlineAdEvents:ad andNotifyDelegate:delegate];
+            UIView *adView = [ad view];
+            if ([placement isKindOfClass: DIOMediumRectanglePlacement.class]
+                || [placement isKindOfClass: DIOInFeedPlacement.class]){
+                adView.frame = CGRectMake(0, 0, 300, 250);
+                [adView.widthAnchor constraintEqualToConstant:300].active = YES;
+                [adView.heightAnchor constraintEqualToConstant:250].active = YES;
+            }
+            [delegate adDidLoadWithView: adView];
+        } noAdHandler:^(NSError *error){
+            [delegate adDidFailToLoadWithErrorType:ISAdapterErrorTypeNoFill errorCode:ISAdapterErrorInternal errorMessage:@"No fill"];
+        }];
+        
     });
 }
 

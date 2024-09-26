@@ -158,37 +158,18 @@ DIOAd *dioInlineAdImpressed;
         adRequest = [placement newAdRequest];
     }
     
-    if([placement isKindOfClass: DIOInterscrollerPlacement.class]) {
-        DIOInterscrollerContainer *container = [[DIOInterscrollerContainer alloc] init];
-        [container loadWithAdRequest:adRequest completionHandler:^(DIOAd *ad){
-            dioInlineAdImpressed = dioInlineAd;
-            dioInlineAd = ad;
-            [self handleInlineAdEvents:ad andNotify:delegate];
-            UIView *adView = [container view];
-            [delegate didLoadAdForAdView: adView];
-        } errorHandler:^(NSError *error) {
-            [self log: @"NO AD: %@", error.localizedDescription];
-            [delegate didFailToLoadAdViewAdWithError:MAAdapterError.noFill];
-            
-        }];
-    } else if ([placement isKindOfClass: DIOInFeedPlacement.class]
-               || [placement isKindOfClass: DIOMediumRectanglePlacement.class]
-               || [placement isKindOfClass: DIOBannerPlacement.class]){
-        [adRequest requestAdWithAdReceivedHandler:^(DIOAd *ad) {
-            [self log: @"AD LOADED"];
-            dioInlineAdImpressed = dioInlineAd;
-            dioInlineAd = ad;
-            [self handleInlineAdEvents:ad andNotify:delegate];
-            
-            UIView *adView = [ad view];
-            [delegate didLoadAdForAdView: adView];
-        } noAdHandler:^(NSError *error){
-            [self log: @"NO AD: %@", error.localizedDescription];
-            [delegate didFailToLoadAdViewAdWithError:MAAdapterError.noFill];
-        }];
-    } else {
-        [delegate didFailToLoadAdViewAdWithError:MAAdapterError.internalError];
-    }
+    [adRequest requestAdWithAdReceivedHandler:^(DIOAd *ad) {
+        [self log: @"AD LOADED"];
+        dioInlineAdImpressed = dioInlineAd;
+        dioInlineAd = ad;
+        [self handleInlineAdEvents:ad andNotify:delegate];
+        
+        UIView *adView = [ad view];
+        [delegate didLoadAdForAdView: adView];
+    } noAdHandler:^(NSError *error){
+        [self log: @"NO AD: %@", error.localizedDescription];
+        [delegate didFailToLoadAdViewAdWithError:MAAdapterError.noFill];
+    }];
 }
 
 - (void)handleInlineAdEvents:(DIOAd *)ad andNotify:(nonnull id<MAAdViewAdapterDelegate>)inlineDelegate{
