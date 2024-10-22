@@ -107,6 +107,23 @@ static NSString *const PLACEMENT_ID = @"placementID";
     }
     [request setMediationPlatform:DIOMediationPlatformGAM];
     
+    if ([placement isKindOfClass: DIOInterscrollerPlacement.class]){
+        DIOInterscrollerPlacement *interscrollerPlacement = (DIOInterscrollerPlacement*)placement;
+        
+        if(params[@"isReveal"]){
+            BOOL isReveal = [[params valueForKey:@"isReveal"] boolValue];
+            interscrollerPlacement.reveal = isReveal;
+        }
+        if(params[@"showHeader"]){
+            BOOL showHeader = [[params valueForKey:@"showHeader"] boolValue];
+            interscrollerPlacement.showHeader = showHeader;
+        }
+        if(params[@"showTapHint"]){
+            BOOL showTapHint = [[params valueForKey:@"showTapHint"] boolValue];
+            interscrollerPlacement.showTapHint = showTapHint;
+        }
+    }
+    
     [request requestAdWithAdReceivedHandler:^(DIOAd *ad) {
         self.adView = [ad view];
         if ([placement isKindOfClass: DIOInterscrollerPlacement.class]){
@@ -120,20 +137,6 @@ static NSString *const PLACEMENT_ID = @"placementID";
             self.adView.frame = CGRectMake(0, 0,
                                            topViewController.view.frame.size.width,
                                            topViewController.view.frame.size.height);
-            DIOInterscrollerPlacement *interscrollerPlacement = (DIOInterscrollerPlacement*)placement;
-            
-            if(params[@"isReveal"]){
-                BOOL isReveal = [[params valueForKey:@"isReveal"] boolValue];
-                interscrollerPlacement.reveal = isReveal;
-            }
-            if(params[@"showHeader"]){
-                BOOL showHeader = [[params valueForKey:@"showHeader"] boolValue];
-                interscrollerPlacement.showHeader = showHeader;
-            }
-            if(params[@"showTapHint"]){
-                BOOL showTapHint = [[params valueForKey:@"showTapHint"] boolValue];
-                interscrollerPlacement.showTapHint = showTapHint;
-            }
         }
         if ([placement isKindOfClass: DIOBannerPlacement.class]){
             self.adView.frame = CGRectMake(0, 0, 320, 50);
@@ -170,7 +173,6 @@ static NSString *const PLACEMENT_ID = @"placementID";
         completionHandler(nil, error);
         return;
     }
-    
     DIOPlacement *placement = [[DIOController sharedInstance] placementWithId:placementID];
     
     if (!placement) {
