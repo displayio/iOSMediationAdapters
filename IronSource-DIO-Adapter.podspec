@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
     s.name             = 'IronSource-DIO-Adapter'
-    s.version          = '4.2.0'
+    s.version          = '4.2.7'
     s.summary          = 'DIO Adapter for mediating through IronSource'
     s.homepage         = 'https://www.display.io/'
     s.license          = { :type => 'Apache-2.0', :file => 'LICENSE' }
