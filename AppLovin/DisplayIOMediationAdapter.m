@@ -88,6 +88,7 @@ DIOAd *dioInlineAdImpressed;
         adRequest = [placement newAdRequest];
     }
     
+    [adRequest setMediationPlatform:DIOMediationPlatformAppLovin];
     [adRequest requestAdWithAdReceivedHandler:^(DIOAd *ad) {
         [self log: @"AD LOADED"];
         dioInterstitialAd = ad;
@@ -158,6 +159,7 @@ DIOAd *dioInlineAdImpressed;
         adRequest = [placement newAdRequest];
     }
     
+    [adRequest setMediationPlatform:DIOMediationPlatformAppLovin];
     [adRequest requestAdWithAdReceivedHandler:^(DIOAd *ad) {
         [self log: @"AD LOADED"];
         dioInlineAdImpressed = dioInlineAd;
