@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
     s.name             = 'GAM-DIO-Adapter'
-    s.version          = '4.2.7'
+    s.version          = '4.3.0'
     s.summary          = 'DIO Adapter for mediating through Google Ad Manger'
     s.homepage         = 'https://www.display.io/'
     s.license          = { :type => 'Apache-2.0', :file => 'LICENSE' }

@@ -122,11 +122,29 @@ static NSString *const PLACEMENT_ID = @"placementID";
             BOOL showTapHint = [[params valueForKey:@"showTapHint"] boolValue];
             interscrollerPlacement.showTapHint = showTapHint;
         }
+    }   
+    if ([placement isKindOfClass: DIOInlinePlacement.class]){
+        DIOInterscrollerPlacement *subPlacement = (DIOInterscrollerPlacement*)[((DIOInlinePlacement*)placement) getSubPlacement:INTERSCROLLER];
+        
+        if(params[@"isReveal"]){
+            BOOL isReveal = [[params valueForKey:@"isReveal"] boolValue];
+            subPlacement.reveal = isReveal;
+        }
+        if(params[@"showHeader"]){
+            BOOL showHeader = [[params valueForKey:@"showHeader"] boolValue];
+            subPlacement.showHeader = showHeader;
+        }
+        if(params[@"showTapHint"]){
+            BOOL showTapHint = [[params valueForKey:@"showTapHint"] boolValue];
+            subPlacement.showTapHint = showTapHint;
+        }
     }
     
     [request requestAdWithAdReceivedHandler:^(DIOAd *ad) {
         self.adView = [ad view];
-        if ([placement isKindOfClass: DIOInterscrollerPlacement.class]){
+        
+        NSString* type = ad.adUnitType;
+        if ([type isEqual:INTERSCROLLER]){
             UIViewController *topViewController = adConfiguration.topViewController;
             
             if(topViewController == nil) {
@@ -137,13 +155,14 @@ static NSString *const PLACEMENT_ID = @"placementID";
             self.adView.frame = CGRectMake(0, 0,
                                            topViewController.view.frame.size.width,
                                            topViewController.view.frame.size.height);
-        }
-        if ([placement isKindOfClass: DIOBannerPlacement.class]){
+        } else if ([type isEqual:BANNER]){
             self.adView.frame = CGRectMake(0, 0, 320, 50);
         }
-        if ([placement isKindOfClass: DIOMediumRectanglePlacement.class]
-            || [placement isKindOfClass: DIOInFeedPlacement.class]){
+        else if ([type isEqual:INFEED] || [type isEqual:MEDIUMRECTANGLE]){
             self.adView.frame = CGRectMake(0, 0, 300, 250);
+        } else {
+            self.inlineDelegate = completionHandler(nil, [NSError errorWithDomain:DIO_CUSTOM_EVENT code:GADErrorMediationAdapterError userInfo:nil]);
+            return;
         }
         self.inlineDelegate = completionHandler(self, nil);
         [self handleInlineAdEvents:ad];
