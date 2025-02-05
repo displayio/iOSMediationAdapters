@@ -20,6 +20,7 @@
 @implementation DisplayIOMediationAdapter
 
 DIOAd *dioInterstitialAd;
+DIOAd *dioRevardedAd;
 DIOAd *dioInlineAd;
 DIOAd *dioInlineAdImpressed;
 
@@ -59,12 +60,15 @@ DIOAd *dioInlineAdImpressed;
         [dioInterstitialAd finish];
         dioInterstitialAd = nil;
     }
+    if (dioRevardedAd != nil && dioRevardedAd.impressed) {
+        [dioRevardedAd finish];
+        dioRevardedAd = nil;
+    }
     if (dioInlineAdImpressed != nil) {
         [dioInlineAdImpressed finish];
         dioInlineAdImpressed = nil;
     }
 }
-
 
 - (void)loadInterstitialAdForParameters:(nonnull id<MAAdapterResponseParameters>)parameters andNotify:(nonnull id<MAInterstitialAdapterDelegate>)delegate {
     NSString *placementId = parameters.thirdPartyAdPlacementIdentifier;
@@ -127,7 +131,7 @@ DIOAd *dioInlineAdImpressed;
                     [delegate didHideInterstitialAd];
                     break;
                 }
-                    
+                case DIOAdEventOnAdStarted:
                 case DIOAdEventOnSwipedOut:
                 case DIOAdEventOnSnapped:
                 case DIOAdEventOnMuted:
@@ -138,6 +142,84 @@ DIOAd *dioInlineAdImpressed;
         
     } else {
         [delegate didFailToDisplayInterstitialAdWithError:MAAdapterError.internalError];
+    }
+}
+
+
+- (void)loadRewardedAdForParameters:(nonnull id<MAAdapterResponseParameters>)parameters andNotify:(nonnull id<MARewardedAdapterDelegate>)delegate {
+    NSString *placementId = parameters.thirdPartyAdPlacementIdentifier;
+    
+    DIOPlacement *placement = [[DIOController sharedInstance] placementWithId:placementId];
+    if (![placement isKindOfClass:[DIOInterstitialPlacement class]]) {
+        [delegate didFailToLoadRewardedAdWithError:MAAdapterError.internalError];
+        return;
+    }
+    DIOAdRequest *adRequest;
+    
+    @try {
+        NSDictionary<NSString *, id> * localParams = [parameters localExtraParameters];
+        adRequest = localParams[DIO_AD_REQUEST];
+    } @catch (NSException *ignored) {
+        
+    }
+    if (adRequest != nil) {
+        [placement addAdRequest: adRequest];
+    } else {
+        adRequest = [placement newAdRequest];
+    }
+    
+    [adRequest setMediationPlatform:DIOMediationPlatformAppLovin];
+    [adRequest requestAdWithAdReceivedHandler:^(DIOAd *ad) {
+        [self log: @"AD LOADED"];
+        dioRevardedAd = ad;
+        [delegate didLoadRewardedAd];
+    } noAdHandler:^(NSError *error){
+        [self log: @"NO AD: %@", error.localizedDescription];
+        [delegate didFailToLoadRewardedAdWithError:MAAdapterError.noFill];
+    }];
+}
+
+- (void)showRewardedAdForParameters:(nonnull id<MAAdapterResponseParameters>)parameters andNotify:(nonnull id<MARewardedAdapterDelegate>)delegate {
+    if (dioRevardedAd != nil) {
+        UIViewController *presentingViewController;
+        if ( ALSdk.versionCode >= 11020199 ) {
+            presentingViewController = parameters.presentingViewController ?: [ALUtils topViewControllerFromKeyWindow];
+        } else {
+            presentingViewController = [ALUtils topViewControllerFromKeyWindow];
+        }
+        
+        [dioRevardedAd showAdFromViewController:presentingViewController eventHandler:^(DIOAdEvent event){
+            switch (event) {
+                case DIOAdEventOnShown:{
+                    [delegate didDisplayRewardedAd];
+                    break;
+                }
+                case DIOAdEventOnFailedToShow:{
+                    [delegate didFailToDisplayRewardedAdWithError: MAAdapterError.adDisplayFailedError];
+                    break;
+                }
+                case DIOAdEventOnClicked:{
+                    [delegate didClickRewardedAd];
+                    break;
+                }
+                case DIOAdEventOnClosed:
+                    [delegate didHideRewardedAd];
+                    break;
+                case DIOAdEventOnAdCompleted:{
+                    [delegate didRewardUserWithReward:[self reward]];
+                    break;
+                }
+                case DIOAdEventOnAdStarted:
+                case DIOAdEventOnSwipedOut:
+                case DIOAdEventOnSnapped:
+                case DIOAdEventOnMuted:
+                case DIOAdEventOnUnmuted:
+                    break;
+            }
+        }];
+        
+    } else {
+        [delegate didFailToDisplayRewardedAdWithError:MAAdapterError.internalError];
     }
 }
 
@@ -153,12 +235,17 @@ DIOAd *dioInlineAdImpressed;
     } @catch (NSException *ignored) {
         
     }
-    if (adRequest != nil) {
-        [placement addAdRequest: adRequest];
-    } else {
-        adRequest = [placement newAdRequest];
-    }
     
+    if (adRequest == nil) {
+        adRequest = [placement newAdRequest];
+    } else {
+        DIOAdRequest* existed = [placement adRequestById:adRequest.ID];
+        if (existed) {
+            adRequest = [placement newAdRequest];
+        } else {
+            [placement addAdRequest:adRequest];
+        }
+    }
     [adRequest setMediationPlatform:DIOMediationPlatformAppLovin];
     [adRequest requestAdWithAdReceivedHandler:^(DIOAd *ad) {
         [self log: @"AD LOADED"];
@@ -178,7 +265,6 @@ DIOAd *dioInlineAdImpressed;
     if(ad == nil || inlineDelegate == nil) {
         return;
     }
-    
     [ad setEventHandler:^(DIOAdEvent event) {
         switch (event) {
             case DIOAdEventOnShown:
@@ -194,6 +280,7 @@ DIOAd *dioInlineAdImpressed;
             case DIOAdEventOnClosed:
                 [inlineDelegate didHideAdViewAd];
                 break;
+            case DIOAdEventOnAdStarted:
             case DIOAdEventOnAdCompleted:
             case DIOAdEventOnSwipedOut:
             case DIOAdEventOnSnapped:

@@ -11,7 +11,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 static NSString *const DIO_AD_REQUEST = @"dioAdRequest";
 
-@interface DisplayIOMediationAdapter : ALMediationAdapter<MAInterstitialAdapter, MAAdViewAdapter>
+@interface DisplayIOMediationAdapter : ALMediationAdapter<MAInterstitialAdapter, MAAdViewAdapter, MARewardedAdapter>
 
 @end
 
