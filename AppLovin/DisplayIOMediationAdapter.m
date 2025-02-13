@@ -173,6 +173,7 @@ DIOAd *dioInlineAdImpressed;
         [self log: @"AD LOADED"];
         dioRevardedAd = ad;
         [delegate didLoadRewardedAd];
+        [self configureRewardForParameters:parameters];
     } noAdHandler:^(NSError *error){
         [self log: @"NO AD: %@", error.localizedDescription];
         [delegate didFailToLoadRewardedAdWithError:MAAdapterError.noFill];
