@@ -144,7 +144,8 @@ static NSString *const PLACEMENT_ID = @"placementID";
         self.adView = [ad view];
         
         NSString* type = ad.adUnitType;
-        if ([type isEqual:INTERSCROLLER]){
+//        if ([type isEqual:INTERSCROLLER]){ //todo use this case for SDKs 4.4.3 and higher
+        if ([type isEqual:INTERSCROLLER] || [ad isKindOfClass:DIOMediatedInterscroller.class]){
             UIViewController *topViewController = adConfiguration.topViewController;
             
             if(topViewController == nil) {
