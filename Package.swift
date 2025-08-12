@@ -37,7 +37,13 @@ let package = Package(
                     package: "DIOSDK"
                 )
             ], path: "GAM",
-            publicHeadersPath: "."
+            exclude: [
+                "../AppLovin",
+                "../IronSource",
+                "../AppLovin-DIO-Adapter.podspec",
+                "../IronSource-DIO-Adapter.podspec",
+                "../GAM-DIO-Adapter.podspec"
+            ], publicHeadersPath: "."
         )
     ]
 )
