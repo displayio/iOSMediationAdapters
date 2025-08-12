@@ -11,7 +11,7 @@ let package = Package(
         .library(
             name: "GAM-DIO-Adapter",
             type: .static,
-            targets: ["GAMAdapter"]
+            targets: ["DIOGAMAdapter"]
         )
     ],
     dependencies: [
@@ -26,7 +26,7 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "GAMAdapter",
+            name: "DIOGAMAdapter",
             dependencies: [
                 .product(
                     name: "GoogleMobileAds",
