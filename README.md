@@ -35,16 +35,6 @@ You can add `GAM-DIO-Adapter` to your Xcode project using **Swift Package Manage
 
 ---
 
-## 📘 Example Usage
-
-```swift
-import GoogleMobileAds
-import DIOSDK
-
-// Use your GADCustomEvent logic from DIOCustomEvent
-```
-
----
 
 ## 🛠 Internals
 

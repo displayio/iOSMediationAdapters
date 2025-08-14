@@ -75,7 +75,7 @@ static NSString *const PLACEMENT_ID = @"placementID";
         completionHandler(nil, error);
         return;
     }
-    
+        
     DIOPlacement *placement = [[DIOController sharedInstance] placementWithId:placementID];
     
     if (!placement) {
@@ -144,8 +144,7 @@ static NSString *const PLACEMENT_ID = @"placementID";
         self.adView = [ad view];
         
         NSString* type = ad.adUnitType;
-//        if ([type isEqual:INTERSCROLLER]){ //todo use this case for SDKs 4.4.3 and higher
-        if ([type isEqual:INTERSCROLLER] || [ad isKindOfClass:DIOMediatedInterscroller.class]){
+        if ([type isEqual:INTERSCROLLER]){
             UIViewController *topViewController = adConfiguration.topViewController;
             
             if(topViewController == nil) {
@@ -265,6 +264,7 @@ static NSString *const PLACEMENT_ID = @"placementID";
                 [self.interstitialDelegate willDismissFullScreenView];
                 [self.interstitialDelegate didDismissFullScreenView];
                 break;
+            case DIOAdEventOnAdStarted:
             case DIOAdEventOnSwipedOut:
             case DIOAdEventOnSnapped:
             case DIOAdEventOnMuted:
@@ -292,6 +292,7 @@ static NSString *const PLACEMENT_ID = @"placementID";
                 [self.inlineDelegate reportClick];
                 break;
             case DIOAdEventOnClosed:
+            case DIOAdEventOnAdStarted:
             case DIOAdEventOnAdCompleted:
             case DIOAdEventOnSwipedOut:
             case DIOAdEventOnSnapped:
