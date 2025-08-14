@@ -21,7 +21,7 @@ let package = Package(
         ),
         .package(
             url: "https://github.com/displayio/DIOSDK.git",
-            from: "4.4.2"
+            from: "4.4.3"
         )
     ],
     targets: [
