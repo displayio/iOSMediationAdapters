@@ -6,7 +6,7 @@ Pod::Spec.new do |s|
     s.license          = { :type => 'Apache-2.0', :file => 'LICENSE' }
     s.author           = { 'Roman Do' => 'romand@display.io' }
     s.source           = { :git => "https://github.com/displayio/iOSMediationAdapters.git", :tag => "#{s.version}"}
-    s.ios.deployment_target = '10.0'
+    s.ios.deployment_target = '13.0'
     s.static_framework = true
     s.subspec 'AppLovin' do |ms|
        ms.dependency 'AppLovinSDK'
