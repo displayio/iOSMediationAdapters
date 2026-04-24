@@ -57,7 +57,7 @@ let package = Package(
                     package: "DIOSDK"
                 )
             ],
-            path: "GAM",
+            path: "GAM-NOFAN",
             publicHeadersPath: "."
         )
     ]
