@@ -12,6 +12,11 @@ let package = Package(
             name: "GAM-DIO-Adapter",
             type: .static,
             targets: ["DIOGAMAdapter"]
+        ),
+        .library(
+            name: "GAM-DIO-Adapter-WithoutFBAudienceNetwork",
+            type: .static,
+            targets: ["DIOGAMAdapterNoFAN"]
         )
     ],
     dependencies: [
@@ -21,7 +26,7 @@ let package = Package(
         ),
         .package(
             url: "https://github.com/displayio/DIOSDK.git",
-            from: "4.4.3"
+            from: "4.5.5"
         )
     ],
     targets: [
@@ -36,8 +41,24 @@ let package = Package(
                     name: "DIOSDK",
                     package: "DIOSDK"
                 )
-            ], path: "GAM",
-          publicHeadersPath: "."
+            ],
+            path: "GAM",
+            publicHeadersPath: "."
+        ),
+        .target(
+            name: "DIOGAMAdapterNoFAN",
+            dependencies: [
+                .product(
+                    name: "GoogleMobileAds",
+                    package: "swift-package-manager-google-mobile-ads"
+                ),
+                .product(
+                    name: "DIOSDK-WithoutFBAudienceNetwork",
+                    package: "DIOSDK"
+                )
+            ],
+            path: "GAM",
+            publicHeadersPath: "."
         )
     ]
 )
