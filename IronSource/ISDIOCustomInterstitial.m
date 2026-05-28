@@ -46,6 +46,10 @@ DIOAd *dioInterstitialAd;
 - (void)showAdWithViewController:(nonnull UIViewController *)viewController
                           adData:(nonnull ISAdData *)adData
                         delegate:(nonnull id<ISInterstitialAdDelegate>)delegate {
+    // LevelPlay (IronSource 9.x) invokes show on a background thread, but presenting the DIO
+    // interstitial view controller must happen on the main thread. Dispatch to main to avoid
+    // "Modifying properties of a view's layer off the main thread" assertions.
+    dispatch_async(dispatch_get_main_queue(), ^{
     if (dioInterstitialAd == nil || dioInterstitialAd.impressed) {
         [delegate adDidFailToShowWithErrorCode:ISAdapterErrorInternal errorMessage:@"Failed to show Ad"];
         return;
@@ -54,7 +58,7 @@ DIOAd *dioInterstitialAd;
         switch (event) {
             case DIOAdEventOnShown:{
                 [delegate adDidOpen];
-                [delegate adDidShowSucceed];
+                [delegate adDidBecomeVisible];
                 if ([dioInterstitialAd isKindOfClass:DIOInterstitialVast.class]) {
                     [delegate adDidStart];
                 }
@@ -80,7 +84,7 @@ DIOAd *dioInterstitialAd;
                 dioInterstitialAd = nil;
                 break;
             }
-                
+            case DIOAdEventOnAdStarted:
             case DIOAdEventOnSwipedOut:
             case DIOAdEventOnSnapped:
             case DIOAdEventOnMuted:
@@ -88,6 +92,7 @@ DIOAd *dioInterstitialAd;
                 break;
         }
     }];
+    });
 }
 
 - (BOOL)isAdAvailableWithAdData:(nonnull ISAdData *)adData {

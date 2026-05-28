@@ -8,21 +8,14 @@
 #import "DisplayIOMediationAdapter.h"
 #import <DIOSDK/DIOController.h>
 #import <DIOSDK/DIOPlacement.h>
-#import <DIOSDK/DIOBannerPlacement.h>
-#import <DIOSDK/DIOMediumRectanglePlacement.h>
-#import <DIOSDK/DIOInfeedPlacement.h>
 #import <DIOSDK/DIOInterstitialPlacement.h>
-#import <DIOSDK/DIOInterstitialHtml.h>
-#import <DIOSDK/DIOInterstitialVast.h>
-#import <DIOSDK/DIOInterscrollerPlacement.h>
 
 
-@implementation DisplayIOMediationAdapter
-
-DIOAd *dioInterstitialAd;
-DIOAd *dioRevardedAd;
-DIOAd *dioInlineAd;
-DIOAd *dioInlineAdImpressed;
+@implementation DisplayIOMediationAdapter {
+    DIOAd *dioInterstitialAd;
+    DIOAd *dioRevardedAd;
+    DIOAd *dioInlineAd;
+}
 
 - (void)initializeWithParameters:(id<MAAdapterInitializationParameters>)parameters completionHandler:(void (^)(MAAdapterInitializationStatus, NSString * _Nullable))completionHandler
 {
@@ -64,9 +57,9 @@ DIOAd *dioInlineAdImpressed;
         [dioRevardedAd finish];
         dioRevardedAd = nil;
     }
-    if (dioInlineAdImpressed != nil) {
-        [dioInlineAdImpressed finish];
-        dioInlineAdImpressed = nil;
+    if (dioInlineAd != nil) {
+        [dioInlineAd finish];
+        dioInlineAd = nil;
     }
 }
 
@@ -78,24 +71,16 @@ DIOAd *dioInlineAdImpressed;
         [delegate didFailToLoadInterstitialAdWithError:MAAdapterError.internalError];
         return;
     }
-    DIOAdRequest *adRequest;
-    
-    @try {
-        NSDictionary<NSString *, id> * localParams = [parameters localExtraParameters];
-        adRequest = localParams[DIO_AD_REQUEST];
-    } @catch (NSException *ignored) {
-        
-    }
+    DIOAdRequest *adRequest = [parameters localExtraParameters][DIO_AD_REQUEST];
     if (adRequest != nil) {
         [placement addAdRequest: adRequest];
     } else {
         adRequest = [placement newAdRequest];
     }
     
-    [adRequest setMediationPlatform:DIOMediationPlatformAppLovin];
     [adRequest requestAdWithAdReceivedHandler:^(DIOAd *ad) {
         [self log: @"AD LOADED"];
-        dioInterstitialAd = ad;
+        self->dioInterstitialAd = ad;
         [delegate didLoadInterstitialAd];
     } noAdHandler:^(NSError *error){
         [self log: @"NO AD: %@", error.localizedDescription];
@@ -154,24 +139,16 @@ DIOAd *dioInlineAdImpressed;
         [delegate didFailToLoadRewardedAdWithError:MAAdapterError.internalError];
         return;
     }
-    DIOAdRequest *adRequest;
-    
-    @try {
-        NSDictionary<NSString *, id> * localParams = [parameters localExtraParameters];
-        adRequest = localParams[DIO_AD_REQUEST];
-    } @catch (NSException *ignored) {
-        
-    }
+    DIOAdRequest *adRequest = [parameters localExtraParameters][DIO_AD_REQUEST];
     if (adRequest != nil) {
         [placement addAdRequest: adRequest];
     } else {
         adRequest = [placement newAdRequest];
     }
     
-    [adRequest setMediationPlatform:DIOMediationPlatformAppLovin];
     [adRequest requestAdWithAdReceivedHandler:^(DIOAd *ad) {
         [self log: @"AD LOADED"];
-        dioRevardedAd = ad;
+        self->dioRevardedAd = ad;
         [delegate didLoadRewardedAd];
         [self configureRewardForParameters:parameters];
     } noAdHandler:^(NSError *error){
@@ -228,15 +205,12 @@ DIOAd *dioInlineAdImpressed;
     NSString *placementId = parameters.thirdPartyAdPlacementIdentifier;
     
     DIOPlacement *placement = [[DIOController sharedInstance] placementWithId:placementId];
-    DIOAdRequest *adRequest;
-    
-    @try {
-        NSDictionary<NSString *, id> * localParams = [parameters localExtraParameters];
-        adRequest = localParams[DIO_AD_REQUEST];
-    } @catch (NSException *ignored) {
-        
+    if (placement == nil) {
+        [delegate didFailToLoadAdViewAdWithError:MAAdapterError.internalError];
+        return;
     }
-    
+    DIOAdRequest *adRequest = [parameters localExtraParameters][DIO_AD_REQUEST];
+
     if (adRequest == nil) {
         adRequest = [placement newAdRequest];
     } else {
@@ -247,11 +221,9 @@ DIOAd *dioInlineAdImpressed;
             [placement addAdRequest:adRequest];
         }
     }
-    [adRequest setMediationPlatform:DIOMediationPlatformAppLovin];
     [adRequest requestAdWithAdReceivedHandler:^(DIOAd *ad) {
         [self log: @"AD LOADED"];
-        dioInlineAdImpressed = dioInlineAd;
-        dioInlineAd = ad;
+        self->dioInlineAd = ad;
         [self handleInlineAdEvents:ad andNotify:delegate];
         
         UIView *adView = [ad view];

@@ -17,6 +17,16 @@ let package = Package(
             name: "GAM-DIO-Adapter-WithoutFBAudienceNetwork",
             type: .static,
             targets: ["DIOGAMAdapterNoFAN"]
+        ),
+        .library(
+            name: "AppLovin-DIO-Adapter",
+            type: .static,
+            targets: ["DIOAppLovinAdapter"]
+        ),
+        .library(
+            name: "IronSource-DIO-Adapter",
+            type: .static,
+            targets: ["DIOIronSourceAdapter"]
         )
     ],
     dependencies: [
@@ -26,7 +36,15 @@ let package = Package(
         ),
         .package(
             url: "https://github.com/displayio/DIOSDK.git",
-            from: "4.5.5"
+            from: "4.7.1"
+        ),
+        .package(
+            url: "https://github.com/AppLovin/AppLovin-MAX-Swift-Package.git",
+            "12.0.0"..<"14.0.0"
+        ),
+        .package(
+            url: "https://github.com/ironsource-mobile/Unity-Mediation-iAds-Swift-Package",
+            from: "9.0.0"
         )
     ],
     targets: [
@@ -58,6 +76,36 @@ let package = Package(
                 )
             ],
             path: "GAM-NOFAN",
+            publicHeadersPath: "."
+        ),
+        .target(
+            name: "DIOAppLovinAdapter",
+            dependencies: [
+                .product(
+                    name: "AppLovinSDK",
+                    package: "AppLovin-MAX-Swift-Package"
+                ),
+                .product(
+                    name: "DIOSDK",
+                    package: "DIOSDK"
+                )
+            ],
+            path: "AppLovin",
+            publicHeadersPath: "."
+        ),
+        .target(
+            name: "DIOIronSourceAdapter",
+            dependencies: [
+                .product(
+                    name: "UnityMediationSDK",
+                    package: "Unity-Mediation-iAds-Swift-Package"
+                ),
+                .product(
+                    name: "DIOSDK",
+                    package: "DIOSDK"
+                )
+            ],
+            path: "IronSource",
             publicHeadersPath: "."
         )
     ]

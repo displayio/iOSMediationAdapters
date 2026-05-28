@@ -39,11 +39,20 @@ DIOAd *dioInlineAd;
             dioInlineAd = ad;
             [self handleInlineAdEvents:ad andNotifyDelegate:delegate];
             UIView *adView = [ad view];
-            if ([placement isKindOfClass: DIOMediumRectanglePlacement.class]
-                || [placement isKindOfClass: DIOInFeedPlacement.class]){
+            NSString *adUnitType = ad.adUnitType;
+            if ([adUnitType isEqualToString:BANNER]) {
+                adView.frame = CGRectMake(0, 0, 320, 50);
+                [adView.widthAnchor constraintEqualToConstant:320].active = YES;
+                [adView.heightAnchor constraintEqualToConstant:50].active = YES;
+            } else if ([adUnitType isEqualToString:INFEED] || [adUnitType isEqualToString:MEDIUMRECTANGLE]) {
                 adView.frame = CGRectMake(0, 0, 300, 250);
                 [adView.widthAnchor constraintEqualToConstant:300].active = YES;
                 [adView.heightAnchor constraintEqualToConstant:250].active = YES;
+            } else if ([adUnitType isEqualToString:INTERSCROLLER]) {
+                CGSize size = viewController.view.bounds.size;
+                adView.frame = CGRectMake(0, 0, size.width, size.height);
+                [adView.widthAnchor constraintEqualToConstant:size.width].active = YES;
+                [adView.heightAnchor constraintEqualToConstant:size.height].active = YES;
             }
             [delegate adDidLoadWithView: adView];
         } noAdHandler:^(NSError *error){
@@ -84,6 +93,7 @@ DIOAd *dioInlineAd;
                 [delegate adDidDismissScreen];
                 break;
             }
+            case DIOAdEventOnAdStarted:
             case DIOAdEventOnAdCompleted:
             case DIOAdEventOnSwipedOut:
             case DIOAdEventOnSnapped:

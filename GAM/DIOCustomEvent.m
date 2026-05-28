@@ -27,25 +27,27 @@ static NSString *const PLACEMENT_ID = @"placementID";
 
 #pragma mark GADMediationAdapter implementation
 
-+ (GADVersionNumber)adSDKVersion {
-    NSArray *versionComponents = [[[DIOController sharedInstance] getSDKVersion] componentsSeparatedByString:@"."];
++ (GADVersionNumber)versionFromString:(NSString *)versionString {
+    NSArray *versionComponents = [versionString componentsSeparatedByString:@"."];
     GADVersionNumber version = {0};
-    version.majorVersion = [versionComponents[0] integerValue];
-    version.minorVersion = [versionComponents[1] integerValue];
-    version.patchVersion = [versionComponents[2] integerValue];
-    
+    if (versionComponents.count > 0) {
+        version.majorVersion = [versionComponents[0] integerValue];
+    }
+    if (versionComponents.count > 1) {
+        version.minorVersion = [versionComponents[1] integerValue];
+    }
+    if (versionComponents.count > 2) {
+        version.patchVersion = [versionComponents[2] integerValue];
+    }
     return version;
 }
 
++ (GADVersionNumber)adSDKVersion {
+    return [self versionFromString:[[DIOController sharedInstance] getSDKVersion]];
+}
+
 + (GADVersionNumber)adapterVersion {
-    NSArray *versionComponents = [[[DIOController sharedInstance] getSDKVersion] componentsSeparatedByString:@"."];
-    GADVersionNumber version = {0};
-    
-    version.majorVersion = [versionComponents[0] integerValue];
-    version.minorVersion = [versionComponents[1] integerValue];
-    version.patchVersion = [versionComponents[2] integerValue];
-    
-    return version;
+    return [self versionFromString:[[DIOController sharedInstance] getSDKVersion]];
 }
 
 + (nullable Class<GADAdNetworkExtras>)networkExtrasClass {
@@ -57,59 +59,89 @@ static NSString *const PLACEMENT_ID = @"placementID";
     completionHandler(nil);
 }
 
-- (void)loadBannerForAdConfiguration:(GADMediationBannerAdConfiguration *)adConfiguration
-                   completionHandler:(GADMediationBannerLoadCompletionHandler)completionHandler {
-    
-    if (![DIOController sharedInstance].initialized) {
-        NSError *error = [NSError errorWithDomain:DIO_CUSTOM_EVENT code:GADErrorInternalError userInfo:nil];
-        completionHandler(nil, error);
-        return;
+- (nullable NSDictionary *)parseParamsFromConfig:(GADMediationAdConfiguration *)config
+                                           error:(NSError **)error {
+    NSString *parameter = config.credentials.settings[PARAMETER];
+    if (parameter.length == 0) {
+        if (error) {
+            *error = [NSError errorWithDomain:DIO_CUSTOM_EVENT code:GADErrorInvalidArgument userInfo:nil];
+        }
+        return nil;
     }
-    
-    NSString *parameter = adConfiguration.credentials.settings[PARAMETER];
-    
-    id params = [NSJSONSerialization JSONObjectWithData:[parameter dataUsingEncoding:NSUTF8StringEncoding] options:0 error:nil];
-    NSString* placementID = params[PLACEMENT_ID];
-    if (!placementID) {
-        NSError *error = [NSError errorWithDomain:DIO_CUSTOM_EVENT code:GADErrorInvalidArgument userInfo:nil];
-        completionHandler(nil, error);
-        return;
+
+    NSData *data = [parameter dataUsingEncoding:NSUTF8StringEncoding];
+    id params = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
+    if (![params isKindOfClass:NSDictionary.class]) {
+        if (error) {
+            *error = [NSError errorWithDomain:DIO_CUSTOM_EVENT code:GADErrorInvalidArgument userInfo:nil];
+        }
+        return nil;
     }
-        
-    DIOPlacement *placement = [[DIOController sharedInstance] placementWithId:placementID];
-    
-    if (!placement) {
-        NSError *error = [NSError errorWithDomain:DIO_CUSTOM_EVENT code:GADErrorInvalidArgument userInfo:nil];
-        completionHandler(nil, error);
-        return;
-    }
+    return params;
+}
+
+- (DIOAdRequest *)resolveAdRequestForPlacement:(DIOPlacement *)placement
+                                        config:(GADMediationAdConfiguration *)config {
     DIOAdRequest *request;
-    
     @try {
-        GADCustomEventExtras* extras = adConfiguration.extras;
-        NSDictionary* dioCustomEvent = [extras extrasForLabel:DIO_CUSTOM_EVENT];
+        GADCustomEventExtras *extras = config.extras;
+        NSDictionary *dioCustomEvent = [extras extrasForLabel:DIO_CUSTOM_EVENT];
         if (dioCustomEvent != nil) {
             request = dioCustomEvent[DIO_AD_REQUEST];
         }
     } @catch (NSException *ignored) {
-        
+
     }
-    
+
     if (request == nil) {
         request = [placement newAdRequest];
     } else {
-        DIOAdRequest* existed = [placement adRequestById:request.ID];
+        DIOAdRequest *existed = [placement adRequestById:request.ID];
         if (existed) {
             request = [placement newAdRequest];
         } else {
             [placement addAdRequest:request];
         }
     }
-    [request setMediationPlatform:DIOMediationPlatformGAM];
-    
+    return request;
+}
+
+- (void)loadBannerForAdConfiguration:(GADMediationBannerAdConfiguration *)adConfiguration
+                   completionHandler:(GADMediationBannerLoadCompletionHandler)completionHandler {
+
+    if (![DIOController sharedInstance].initialized) {
+        NSError *error = [NSError errorWithDomain:DIO_CUSTOM_EVENT code:GADErrorInternalError userInfo:nil];
+        completionHandler(nil, error);
+        return;
+    }
+
+    NSError *paramsError;
+    NSDictionary *params = [self parseParamsFromConfig:adConfiguration error:&paramsError];
+    if (!params) {
+        completionHandler(nil, paramsError);
+        return;
+    }
+
+    NSString* placementID = params[PLACEMENT_ID];
+    if (!placementID) {
+        NSError *error = [NSError errorWithDomain:DIO_CUSTOM_EVENT code:GADErrorInvalidArgument userInfo:nil];
+        completionHandler(nil, error);
+        return;
+    }
+
+    DIOPlacement *placement = [[DIOController sharedInstance] placementWithId:placementID];
+
+    if (!placement) {
+        NSError *error = [NSError errorWithDomain:DIO_CUSTOM_EVENT code:GADErrorInvalidArgument userInfo:nil];
+        completionHandler(nil, error);
+        return;
+    }
+
+    DIOAdRequest *request = [self resolveAdRequestForPlacement:placement config:adConfiguration];
+
     if ([placement isKindOfClass: DIOInterscrollerPlacement.class]){
         DIOInterscrollerPlacement *interscrollerPlacement = (DIOInterscrollerPlacement*)placement;
-        
+
         if(params[@"isReveal"]){
             BOOL isReveal = [[params valueForKey:@"isReveal"] boolValue];
             interscrollerPlacement.reveal = isReveal;
@@ -122,10 +154,10 @@ static NSString *const PLACEMENT_ID = @"placementID";
             BOOL showTapHint = [[params valueForKey:@"showTapHint"] boolValue];
             interscrollerPlacement.showTapHint = showTapHint;
         }
-    }   
+    }
     if ([placement isKindOfClass: DIOInlinePlacement.class]){
         DIOInterscrollerPlacement *subPlacement = (DIOInterscrollerPlacement*)[((DIOInlinePlacement*)placement) getSubPlacement:INTERSCROLLER];
-        
+
         if(params[@"isReveal"]){
             BOOL isReveal = [[params valueForKey:@"isReveal"] boolValue];
             subPlacement.reveal = isReveal;
@@ -139,37 +171,46 @@ static NSString *const PLACEMENT_ID = @"placementID";
             subPlacement.showTapHint = showTapHint;
         }
     }
-    
+
+    __weak typeof(self) weakSelf = self;
     [request requestAdWithAdReceivedHandler:^(DIOAd *ad) {
-        self.adView = [ad view];
-        
+        __strong typeof(weakSelf) strongSelf = weakSelf;
+        if (strongSelf == nil) {
+            return;
+        }
+        strongSelf.adView = [ad view];
+
         NSString* type = ad.adUnitType;
         if ([type isEqual:INTERSCROLLER]){
             UIViewController *topViewController = adConfiguration.topViewController;
-            
+
             if(topViewController == nil) {
                 NSError *error = [NSError errorWithDomain:DIO_CUSTOM_EVENT code:GADErrorInternalError userInfo:nil];
-                self.inlineDelegate = completionHandler(nil, error);
+                strongSelf.inlineDelegate = completionHandler(nil, error);
                 return;
             }
-            self.adView.frame = CGRectMake(0, 0,
+            strongSelf.adView.frame = CGRectMake(0, 0,
                                            topViewController.view.frame.size.width,
                                            topViewController.view.frame.size.height);
         } else if ([type isEqual:BANNER]){
-            self.adView.frame = CGRectMake(0, 0, 320, 50);
+            strongSelf.adView.frame = CGRectMake(0, 0, 320, 50);
         }
         else if ([type isEqual:INFEED] || [type isEqual:MEDIUMRECTANGLE]){
-            self.adView.frame = CGRectMake(0, 0, 300, 250);
+            strongSelf.adView.frame = CGRectMake(0, 0, 300, 250);
         } else {
-            self.inlineDelegate = completionHandler(nil, [NSError errorWithDomain:DIO_CUSTOM_EVENT code:GADErrorMediationAdapterError userInfo:nil]);
+            strongSelf.inlineDelegate = completionHandler(nil, [NSError errorWithDomain:DIO_CUSTOM_EVENT code:GADErrorMediationAdapterError userInfo:nil]);
             return;
         }
-        self.inlineDelegate = completionHandler(self, nil);
-        [self handleInlineAdEvents:ad];
+        strongSelf.inlineDelegate = completionHandler(strongSelf, nil);
+        [strongSelf handleInlineAdEvents:ad];
     } noAdHandler:^(NSError *error){
-        self.inlineDelegate = completionHandler(nil, error);
+        __strong typeof(weakSelf) strongSelf = weakSelf;
+        if (strongSelf == nil) {
+            return;
+        }
+        strongSelf.inlineDelegate = completionHandler(nil, error);
     }];
-    
+
 }
 
 
@@ -183,9 +224,14 @@ static NSString *const PLACEMENT_ID = @"placementID";
         completionHandler(nil, error);
         return;
     }
-    
-    NSString *parameter = adConfiguration.credentials.settings[PARAMETER];
-    id params = [NSJSONSerialization JSONObjectWithData:[parameter dataUsingEncoding:NSUTF8StringEncoding] options:0 error:nil];
+
+    NSError *paramsError;
+    NSDictionary *params = [self parseParamsFromConfig:adConfiguration error:&paramsError];
+    if (!params) {
+        completionHandler(nil, paramsError);
+        return;
+    }
+
     NSString* placementID = params[PLACEMENT_ID];
     if (!placementID) {
         NSError *error = [NSError errorWithDomain:DIO_CUSTOM_EVENT code:GADErrorInvalidArgument userInfo:nil];
@@ -193,42 +239,27 @@ static NSString *const PLACEMENT_ID = @"placementID";
         return;
     }
     DIOPlacement *placement = [[DIOController sharedInstance] placementWithId:placementID];
-    
+
     if (!placement) {
         NSError *error = [NSError errorWithDomain:DIO_CUSTOM_EVENT code:GADErrorInvalidArgument userInfo:nil];
         completionHandler(nil, error);
         return;
     }
-    
-    DIOAdRequest *request;
-    @try {
-        GADCustomEventExtras* extras = adConfiguration.extras;
-        NSDictionary* dioCustomEvent = [extras extrasForLabel:DIO_CUSTOM_EVENT];
-        if (dioCustomEvent != nil) {
-            request = dioCustomEvent[DIO_AD_REQUEST];
-        }
-    } @catch (NSException *ignored) {
-        
-    }
-    
-    if (request == nil) {
-        request = [placement newAdRequest];
-    } else {
-        DIOAdRequest* existed = [placement adRequestById:request.ID];
-        if (existed) {
-            request = [placement newAdRequest];
-        } else {
-            [placement addAdRequest:request];
-        }
-    }
-    [request setMediationPlatform:DIOMediationPlatformGAM];
+
+    DIOAdRequest *request = [self resolveAdRequestForPlacement:placement config:adConfiguration];
+
+    __weak typeof(self) weakSelf = self;
     [request requestAdWithAdReceivedHandler:^(DIOAd *ad) {
-        self.dioInterstitialAd = ad;
-        self.interstitialDelegate = completionHandler(self, nil);
+        __strong typeof(weakSelf) strongSelf = weakSelf;
+        if (strongSelf == nil) {
+            return;
+        }
+        strongSelf.dioInterstitialAd = ad;
+        strongSelf.interstitialDelegate = completionHandler(strongSelf, nil);
     } noAdHandler:^(NSError *error){
         completionHandler(nil, error);
     }];
-    
+
 }
 
 #pragma mark GADMediationBannerAd implementation
@@ -241,28 +272,30 @@ static NSString *const PLACEMENT_ID = @"placementID";
     if(!self.dioInterstitialAd) {
         return;
     }
+    __weak typeof(self) weakSelf = self;
     [self.dioInterstitialAd showAdFromViewController:viewController eventHandler:^(DIOAdEvent event){
-        if(self.interstitialDelegate == nil) {
+        __strong typeof(weakSelf) strongSelf = weakSelf;
+        if(strongSelf == nil || strongSelf.interstitialDelegate == nil) {
             return;
         }
-        
+
         switch (event) {
             case DIOAdEventOnShown:
-                [self.interstitialDelegate willPresentFullScreenView];
-                [self.interstitialDelegate reportImpression];
+                [strongSelf.interstitialDelegate willPresentFullScreenView];
+                [strongSelf.interstitialDelegate reportImpression];
                 break;
             case DIOAdEventOnFailedToShow:{
                 NSError *error = [NSError errorWithDomain:DIO_CUSTOM_EVENT code:GADErrorInternalError userInfo:nil];
-                [self.interstitialDelegate didFailToPresentWithError:error];
+                [strongSelf.interstitialDelegate didFailToPresentWithError:error];
                 break;
             }
             case DIOAdEventOnClicked:
-                [self.interstitialDelegate reportClick];
+                [strongSelf.interstitialDelegate reportClick];
                 break;
             case DIOAdEventOnClosed:
             case DIOAdEventOnAdCompleted:
-                [self.interstitialDelegate willDismissFullScreenView];
-                [self.interstitialDelegate didDismissFullScreenView];
+                [strongSelf.interstitialDelegate willDismissFullScreenView];
+                [strongSelf.interstitialDelegate didDismissFullScreenView];
                 break;
             case DIOAdEventOnAdStarted:
             case DIOAdEventOnSwipedOut:
@@ -278,18 +311,23 @@ static NSString *const PLACEMENT_ID = @"placementID";
     if(ad == nil || self.inlineDelegate == nil) {
         return;
     }
+    __weak typeof(self) weakSelf = self;
     [ad setEventHandler:^(DIOAdEvent event) {
+        __strong typeof(weakSelf) strongSelf = weakSelf;
+        if(strongSelf == nil || strongSelf.inlineDelegate == nil) {
+            return;
+        }
         switch (event) {
             case DIOAdEventOnShown:
-                [self.inlineDelegate reportImpression];
+                [strongSelf.inlineDelegate reportImpression];
                 break;
             case DIOAdEventOnFailedToShow:{
                 NSError *error = [NSError errorWithDomain:DIO_CUSTOM_EVENT code:GADErrorInternalError userInfo:nil];
-                [self.inlineDelegate didFailToPresentWithError:error];
+                [strongSelf.inlineDelegate didFailToPresentWithError:error];
                 break;
             }
             case DIOAdEventOnClicked:
-                [self.inlineDelegate reportClick];
+                [strongSelf.inlineDelegate reportClick];
                 break;
             case DIOAdEventOnClosed:
             case DIOAdEventOnAdStarted:

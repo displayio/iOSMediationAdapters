@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
     s.name             = 'AppLovin-DIO-Adapter'
-    s.version          = '4.3.2'
+    s.version          = '4.7.1'
     s.summary          = 'DIO Adapter for mediating through AppLovin'
     s.homepage         = 'https://www.display.io/'
     s.license          = { :type => 'Apache-2.0', :file => 'LICENSE' }
@@ -9,12 +9,12 @@ Pod::Spec.new do |s|
     s.ios.deployment_target = '13.0'
     s.static_framework = true
     s.subspec 'AppLovin' do |ms|
-       ms.dependency 'AppLovinSDK'
+       ms.dependency 'AppLovinSDK', '>= 12.0'
     end
     s.subspec 'Network' do |ns|
         ns.source_files = 'AppLovin/*.{h,m}'
-        ns.dependency 'DIOSDK'
-        ns.dependency 'AppLovinSDK'
+        ns.dependency 'DIOSDK', '>= 4.7.1'
+        ns.dependency 'AppLovinSDK', '>= 12.0'
     end
 end
 

@@ -24,7 +24,6 @@
     }
 
     DIOAdRequest *adRequest = [placement newAdRequest];
-    [adRequest setMediationPlatform:DIOMediationPlatformTopOn];
 
     __weak typeof(self) weakSelf = self;
     [adRequest requestAdWithAdReceivedHandler:^(DIOAd *ad) {

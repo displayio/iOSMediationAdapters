@@ -28,7 +28,6 @@
     [self setupInterscrollerConfig:localExtra placement:placement];
 
     DIOAdRequest *adRequest = [self resolveAdRequest:localExtra placement:placement];
-    [adRequest setMediationPlatform:DIOMediationPlatformTopOn];
 
     __weak typeof(self) weakSelf = self;
     [adRequest requestAdWithAdReceivedHandler:^(DIOAd *ad) {
