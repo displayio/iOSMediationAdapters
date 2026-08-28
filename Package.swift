@@ -5,7 +5,7 @@ let package = Package(
     name: "iOSMediationAdapters",
     defaultLocalization: "en",
     platforms: [
-        .iOS(.v13)
+        .iOS(.v15)
     ],
     products: [
         .library(
@@ -27,6 +27,11 @@ let package = Package(
             name: "IronSource-DIO-Adapter",
             type: .static,
             targets: ["DIOIronSourceAdapter"]
+        ),
+        .library(
+            name: "TradPlus-DIO-Adapter",
+            type: .static,
+            targets: ["DIOTradPlusAdapter"]
         )
     ],
     dependencies: [
@@ -45,6 +50,10 @@ let package = Package(
         .package(
             url: "https://github.com/ironsource-mobile/Unity-Mediation-iAds-Swift-Package",
             from: "9.0.0"
+        ),
+        .package(
+            url: "https://github.com/tradplus/TradPlusAdSDK-SPM.git",
+            from: "15.12.1"
         )
     ],
     targets: [
@@ -106,6 +115,21 @@ let package = Package(
                 )
             ],
             path: "IronSource",
+            publicHeadersPath: "."
+        ),
+        .target(
+            name: "DIOTradPlusAdapter",
+            dependencies: [
+                .product(
+                    name: "TradPlusAdSDK",
+                    package: "TradPlusAdSDK-SPM"
+                ),
+                .product(
+                    name: "DIOSDK",
+                    package: "DIOSDK"
+                )
+            ],
+            path: "TradPlus",
             publicHeadersPath: "."
         )
     ]

@@ -14,8 +14,9 @@ Lets you serve DIOSDK ads through third-party mediation platforms.
 | AppLovin MAX | `AppLovin-DIO-Adapter` | `AppLovin-DIO-Adapter` | `AppLovinSDK` >= 12.0 |
 | IronSource (LevelPlay) | `IronSource-DIO-Adapter` | `IronSource-DIO-Adapter` | `IronSourceSDK` >= 9.0 |
 | TopOn | `TopOn-DIO-Adapter` | — | `TPNiOS` >= 6.0, `TPNMediationAdxSmartdigimktAdapter` >= 6.0 |
+| TradPlus | `TradPlus-DIO-Adapter` | `TradPlus-DIO-Adapter` | `TradPlusAdSDK` >= 15.12.1 |
 
-All adapters require **`DIOSDK` >= 4.7.1**.
+All adapters require **`DIOSDK` >= 4.7.1**, except **TradPlus** which requires **`DIOSDK` >= 4.8.0** (iOS 15+).
 
 ---
 
@@ -30,6 +31,7 @@ pod 'GAM-DIO-Adapter'
 pod 'AppLovin-DIO-Adapter'
 pod 'IronSource-DIO-Adapter'
 pod 'TopOn-DIO-Adapter'
+pod 'TradPlus-DIO-Adapter'
 ```
 
 `DIOSDK` and the network SDK are pulled in automatically.
@@ -49,6 +51,7 @@ pod 'TopOn-DIO-Adapter'
    - `GAM-DIO-Adapter-WithoutFBAudienceNetwork` (variant without FBAudienceNetwork)
    - `AppLovin-DIO-Adapter`
    - `IronSource-DIO-Adapter`
+   - `TradPlus-DIO-Adapter`
 
 > ⚠️ `TopOn-DIO-Adapter` is **CocoaPods-only** — TPN's SDK doesn't ship a Swift Package.
 
@@ -56,7 +59,7 @@ pod 'TopOn-DIO-Adapter'
 
 ## 📋 Requirements
 
-- iOS 13.0+
+- iOS 13.0+ (iOS 15.0+ for the TradPlus adapter / any adapter used via SPM with DIOSDK 4.8.0)
 - Swift 5.9 or higher
 - Xcode 15+
 
